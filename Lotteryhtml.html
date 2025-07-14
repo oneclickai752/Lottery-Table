@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="Attendance Table App for web and iOS"> <!-- Web အတွက် ဖော်ပြချက် -->
+    <title>Attendance Table App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f4f4f4;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: fixed;
+            -webkit-user-select: text;
+        }
+
+        #headerTable th {
+            border: 2px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            width: 25%;
+            min-width: 80px;
+            background-color: #ffffff;
+        }
+
+        .date-cell {
+            background-color: #ff0000;
+            color: #ffffff; /* စာလုံးအဖြူရောင် (အနီရောင်ကို အဖြူရောင်သို့ ပြောင်းထားပါတယ်) */
+        }
+
+        .time-cell, .data-cell {
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        .time-cell:empty, .data-cell:empty {
+            background-color: #ffffff;
+        }
+
+        .time-cell:focus, .data-cell:focus {
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        #dataTable td {
+            border: 2px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            width: 25%;
+            min-width: 80px;
+            word-wrap: break-word;
+            background-color: #ffffff;
+        }
+
+        .pagination, .save-row {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            -webkit-appearance: none;
+            border: 1px solid #000;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        button:active {
+            background-color: #e0e0e0;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+            }
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 5px;
+                min-width: 60px;
+            }
+            button {
+                padding: 3px 8px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <table id="headerTable">
+            <tr>
+                <th class="date-cell">နေ့စွဲ</th>
+                <th contenteditable="true" class="time-cell"></th>
+                <th contenteditable="true" class="time-cell"></th>
+                <th contenteditable="true" class="time-cell"></th>
+            </tr>
+        </table>
+        <table id="dataTable">
+            <tbody id="tableBody">
+                <!-- Dynamic rows will be added here -->
+            </tbody>
+        </table>
+        <div class="save-row">
+            <button onclick="saveData()">Save</button>
+        </div>
+        <div class="pagination">
+            <button onclick="prevPage()">ယခင်စာမျက်နှာ</button>
+            <span id="pageInfo"></span>
+            <button onclick="nextPage()">နောက်စာမျက်နှာ</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        let tableData = [];
+
+        function addInitialRows() {
+            const tbody = document.getElementById('tableBody');
+            for (let i = 0; i < rowsPerPage; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                `;
+                tbody.appendChild(row);
+            }
+            paginate();
+        }
+
+        function saveData() {
+            const table = document.getElementById('dataTable');
+            tableData = [];
+            for (let row of table.rows) {
+                const rowData = [];
+                for (let cell of row.cells) {
+                    rowData.push(cell.textContent || '');
+                }
+                tableData.push(rowData);
+            }
+            localStorage.setItem('tableData', JSON.stringify(tableData));
+            alert('ဒေတာသိမ်းပြီးပါတယ်!');
+        }
+
+        function paginate() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedData = tableData.slice(start, end);
+
+            for (let i = 0; i < rowsPerPage; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                    <td contenteditable="true" class="data-cell"></td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            // သိမ်းထားတဲ့ ဒေတာကို ပြန်ဖြည့်ပေးခြင်း
+            const rows = tbody.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length && i < paginatedData.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                for (let j = 0; j < cells.length; j++) {
+                    cells[j].textContent = paginatedData[i][j] || '';
+                }
+            }
+
+            document.getElementById('pageInfo').textContent = `စာမျက်နှာ ${currentPage}`;
+        }
+
+        function nextPage() {
+            if ((currentPage * rowsPerPage) < tableData.length || tableData.length % rowsPerPage === 0) {
+                currentPage++;
+                if ((currentPage - 1) * rowsPerPage >= tableData.length) {
+                    addInitialRows();
+                }
+                paginate();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                paginate();
+            }
+        }
+
+        window.onload = function() {
+            const savedData = localStorage.getItem('tableData');
+            if (savedData) {
+                tableData = JSON.parse(savedData);
+            } else {
+                addInitialRows();
+            }
+            paginate();
+        };
+    </script>
+</body>
+</html>
